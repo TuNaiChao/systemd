@@ -2104,6 +2104,12 @@ static int unit_watch_cgroup_memory(Unit *u) {
         if (r < 0)
                 return log_unit_error_errno(u, r, "Failed to add memory inotify watch descriptor for control group %s to hash map: %m", empty_to_root(crt->cgroup_path));
 
+        /* The cgroup may have been recreated since we last watched it, e.g. when the unit was
+         * restarted after its old (now empty) cgroup was pruned, in which case the kernel OOM
+         * counters start from zero again. Let's take a fresh baseline of the counters, so that
+         * future OOM kills are detected relative to the new cgroup's counters. */
+        (void) unit_check_oom(u);
+
         return 0;
 }
 
