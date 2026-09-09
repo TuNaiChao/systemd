@@ -698,6 +698,7 @@ static int parse_argv(int argc, char *argv[]) {
 
         OptionParser opts = { argc, argv };
         int r;
+        bool saw_p = false, saw_k = false;
 
         FOREACH_OPTION_OR_RETURN(c, &opts)
                 switch (c) {
@@ -755,10 +756,12 @@ static int parse_argv(int argc, char *argv[]) {
 
                 OPTION_SHORT('P', NULL, "Count userspace processes instead of tasks (excl. kernel)"):
                         arg_count = COUNT_USERSPACE_PROCESSES;
+                        saw_p = true;
                         break;
 
                 OPTION_SHORT('k', NULL, "Count all processes instead of tasks (incl. kernel)"):
                         arg_count = COUNT_ALL_PROCESSES;
+                        saw_k = true;
                         break;
 
                 OPTION_LONG("recursive", "BOOL", "Sum up process count recursively"):
@@ -814,6 +817,14 @@ static int parse_argv(int argc, char *argv[]) {
                                        "Too many arguments.");
         if (n_args == 1)
                 arg_root = option_parser_get_args(&opts)[0];
+
+        if (saw_p && saw_k)
+                return log_error_errno(SYNTHETIC_ERRNO(EINVAL),
+                                       "-P and -k may not be combined.");
+
+        if (arg_machine && arg_root)
+                return log_error_errno(SYNTHETIC_ERRNO(EINVAL),
+                                       "--machine= may not be combined with a control group path.");
 
         return 1;
 }

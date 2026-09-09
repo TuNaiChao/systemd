@@ -30,3 +30,6 @@ systemd-cgtop -p -t -c -m -i
 (! systemd-cgtop --depth=-1)
 (! systemd-cgtop --recursive=foo)
 (! systemd-cgtop --delay=1foo)
+(! systemd-cgtop -P -k)
+(! systemd-cgtop -k -P)
+(! systemd-cgtop --machine=foo /)
