@@ -521,8 +521,8 @@
         <citerefentry project='man-pages'><refentrytitle>socket</refentrytitle><manvolnum>7</manvolnum></citerefentry>
         and the <ulink
         url="http://www.tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/">TCP
-        Keepalive HOWTO</ulink> for details.)
-        Default value is 7200 seconds (2 hours).</para>
+        Keepalive HOWTO</ulink> for details.) Takes a time span in the range
+        1s…32767s. Default value is 7200 seconds (2 hours).</para>
 
         <xi:include href="version-info.xml" xpointer="v216"/></listitem>
       </varlistentry>
@@ -534,7 +534,8 @@
         <constant>TCP_KEEPINTVL</constant> socket option (see <citerefentry
         project='man-pages'><refentrytitle>socket</refentrytitle><manvolnum>7</manvolnum></citerefentry> and
         the <ulink url="http://www.tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/">TCP Keepalive
-        HOWTO</ulink> for details.) Default value is 75 seconds.</para>
+        HOWTO</ulink> for details.) Takes a time span in the range 1s…32767s. Default value is 75
+        seconds.</para>
 
         <xi:include href="version-info.xml" xpointer="v216"/></listitem>
       </varlistentry>
@@ -548,7 +549,8 @@
         <citerefentry project='man-pages'><refentrytitle>socket</refentrytitle><manvolnum>7</manvolnum></citerefentry>
         and the <ulink
         url="http://www.tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/">TCP
-        Keepalive HOWTO</ulink> for details.) Default value is
+        Keepalive HOWTO</ulink> for details.) Takes an integer in the range
+        1…127. Default value is
         9.</para>
 
         <xi:include href="version-info.xml" xpointer="v216"/></listitem>
@@ -635,7 +637,7 @@
         project='die-net'><refentrytitle>ip</refentrytitle><manvolnum>7</manvolnum></citerefentry> and
         <citerefentry
         project='die-net'><refentrytitle>ipv6</refentrytitle><manvolnum>7</manvolnum></citerefentry> for
-        details.)</para></listitem>
+        details.) Takes an integer in the range 1…255.</para></listitem>
       </varlistentry>
 
       <varlistentry>

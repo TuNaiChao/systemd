@@ -28,6 +28,7 @@
 #include "string-util.h"
 #include "strv.h"
 #include "tests.h"
+#include "time-util.h"
 #include "user-util.h"
 
 /* Nontrivial value serves as a placeholder to check that parsing function (didn't) change it */
@@ -472,6 +473,60 @@ TEST(config_parse_bind_paths) {
         ASSERT_FALSE(c.bind_mounts[2].ignore_enoent);
 
         exec_context_done(&c);
+}
+
+TEST(config_parse_socket_options) {
+        int ip_ttl = -1;
+        usec_t keep_alive_time = 0, keep_alive_interval = 0;
+        unsigned keep_alive_cnt = 0;
+        unsigned n_syntax_warnings = 0;
+
+        {
+                _unused_ _cleanup_(clear_log_syntax_callback) dummy_t dummy;
+
+                set_log_syntax_callback(count_syntax_warnings, &n_syntax_warnings);
+
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 1, "Socket", 1, "IPTTL", 0, "64", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 64);
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 2, "Socket", 1, "IPTTL", 0, "1", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 1);
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 3, "Socket", 1, "IPTTL", 0, "255", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 255);
+
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 4, "Socket", 1, "IPTTL", 0, "0", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 255);
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 5, "Socket", 1, "IPTTL", 0, "256", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 255);
+                ASSERT_OK(config_parse_socket_ip_ttl(NULL, "fake", 6, "Socket", 1, "IPTTL", 0, "-5", &ip_ttl, NULL));
+                ASSERT_EQ(ip_ttl, 255);
+
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 7, "Socket", 1, "KeepAliveTimeSec", 0, "10min", &keep_alive_time, NULL));
+                ASSERT_EQ(keep_alive_time, 10 * USEC_PER_MINUTE);
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 8, "Socket", 1, "KeepAliveTimeSec", 0, "1s", &keep_alive_time, NULL));
+                ASSERT_EQ(keep_alive_time, USEC_PER_SEC);
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 9, "Socket", 1, "KeepAliveIntervalSec", 0, "75", &keep_alive_interval, NULL));
+                ASSERT_EQ(keep_alive_interval, 75 * USEC_PER_SEC);
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 10, "Socket", 1, "KeepAliveIntervalSec", 0, "32767s", &keep_alive_interval, NULL));
+                ASSERT_EQ(keep_alive_interval, 32767 * USEC_PER_SEC);
+
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 11, "Socket", 1, "KeepAliveTimeSec", 0, "500ms", &keep_alive_time, NULL));
+                ASSERT_EQ(keep_alive_time, USEC_PER_SEC);
+                ASSERT_OK(config_parse_socket_keepalive_time(NULL, "fake", 12, "Socket", 1, "KeepAliveTimeSec", 0, "32768s", &keep_alive_time, NULL));
+                ASSERT_EQ(keep_alive_time, USEC_PER_SEC);
+
+                ASSERT_OK(config_parse_socket_keepalive_probes(NULL, "fake", 13, "Socket", 1, "KeepAliveProbes", 0, "9", &keep_alive_cnt, NULL));
+                ASSERT_EQ(keep_alive_cnt, 9U);
+                ASSERT_OK(config_parse_socket_keepalive_probes(NULL, "fake", 14, "Socket", 1, "KeepAliveProbes", 0, "127", &keep_alive_cnt, NULL));
+                ASSERT_EQ(keep_alive_cnt, 127U);
+
+                ASSERT_OK(config_parse_socket_keepalive_probes(NULL, "fake", 15, "Socket", 1, "KeepAliveProbes", 0, "0", &keep_alive_cnt, NULL));
+                ASSERT_EQ(keep_alive_cnt, 127U);
+                ASSERT_OK(config_parse_socket_keepalive_probes(NULL, "fake", 16, "Socket", 1, "KeepAliveProbes", 0, "128", &keep_alive_cnt, NULL));
+                ASSERT_EQ(keep_alive_cnt, 127U);
+        }
+
+        /* Out-of-range values must have been reported and ignored: 7 warnings above. */
+        ASSERT_EQ(n_syntax_warnings, 7U);
 }
 
 TEST(config_parse_log_extra_fields) {

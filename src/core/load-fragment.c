@@ -1133,6 +1133,111 @@ int config_parse_socket_bindtodevice(
         return free_and_replace(s->bind_to_device, p);
 }
 
+int config_parse_socket_ip_ttl(
+                const char *unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        int *ttl = ASSERT_PTR(data);
+        unsigned t;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+
+        /* The kernel accepts 1…255 for IP_TTL, and 0…255 for IPV6_UNICAST_HOPS. As the value is
+         * applied to either depending on the address family, only allow the common range, so that
+         * invalid values are rejected when the unit is loaded rather than when the socket is
+         * created. */
+        r = config_parse_unsigned_bounded(
+                        unit, filename, line, section, section_line, lvalue, rvalue,
+                        1, 255, true,
+                        &t);
+        if (r <= 0)
+                return r;
+
+        *ttl = (int) t;
+        return 0;
+}
+
+int config_parse_socket_keepalive_time(
+                const char *unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        usec_t *t = ASSERT_PTR(data);
+        usec_t u;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+
+        r = parse_sec(rvalue, &u);
+        if (r < 0)
+                return log_syntax_parse_error(unit, filename, line, r, lvalue, rvalue);
+
+        /* The kernel accepts 1…32767 seconds for TCP_KEEPIDLE and TCP_KEEPINTVL, and the value is
+         * converted to whole seconds when applied, hence refuse sub-second values too, which would
+         * otherwise be truncated to zero and rejected by the kernel. */
+        if (u < USEC_PER_SEC || u > 32767 * USEC_PER_SEC) {
+                log_syntax(unit, LOG_WARNING, filename, line, 0,
+                           "Invalid '%s=%s', allowed range is 1s..32767s, ignoring.",
+                           lvalue, rvalue);
+                return 0;
+        }
+
+        *t = u;
+        return 0;
+}
+
+int config_parse_socket_keepalive_probes(
+                const char *unit,
+                const char *filename,
+                unsigned line,
+                const char *section,
+                unsigned section_line,
+                const char *lvalue,
+                int ltype,
+                const char *rvalue,
+                void *data,
+                void *userdata) {
+
+        unsigned *cnt = ASSERT_PTR(data);
+        unsigned t;
+        int r;
+
+        assert(filename);
+        assert(lvalue);
+        assert(rvalue);
+
+        /* The kernel accepts 1…127 for TCP_KEEPCNT. */
+        r = config_parse_unsigned_bounded(
+                        unit, filename, line, section, section_line, lvalue, rvalue,
+                        1, 127, true,
+                        &t);
+        if (r <= 0)
+                return r;
+
+        *cnt = t;
+        return 0;
+}
+
 int config_parse_exec_input(
                 const char *unit,
                 const char *filename,
